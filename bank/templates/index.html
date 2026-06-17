@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Банк — интеграционный прототип</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; color: #222; }
+    h2 { margin-top: 40px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+    th, td { border: 1px solid #ccc; padding: 4px 8px; font-size: 14px; text-align: left; }
+    th { background: #f0f0f0; }
+    section { margin-bottom: 30px; }
+    .top-bar { background: #f5f5f5; padding: 10px; border: 1px solid #ccc; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .top-bar span { font-size: 14px; }
+    .refs { display: flex; gap: 20px; flex-wrap: wrap; }
+    .ref-block { border: 1px solid #ccc; padding: 10px; flex: 1; min-width: 220px; }
+    form.inline { display: inline; }
+    fieldset { margin-top: 10px; }
+    label { display: inline-block; min-width: 160px; }
+    .field-row { margin-bottom: 6px; }
+    button { cursor: pointer; }
+    .hidden { display: none; }
+    small.token { word-break: break-all; color: #555; }
+</style>
+</head>
+<body>
+
+<h1>Банк — демонстрационный интерфейс</h1>
+
+<!-- 1. Логин / токен -->
+<section class="top-bar">
+    <span><b>Логин:</b> {{ login }}</span>
+    {% if token %}
+        <span><b>Токен:</b> <small class="token">{{ token.access_token }}</small></span>
+        <span><b>Действует до:</b> {{ token.expire_date }}</span>
+    {% else %}
+        <span><b>Токен:</b> отсутствует</span>
+    {% endif %}
+    <form class="inline" method="post" action="/force_refresh_token">
+        <button type="submit">Запросить новый токен</button>
+    </form>
+</section>
+
+<!-- 2/9/12. Справочники -->
+<section>
+    <h2>Справочники</h2>
+    <div class="refs">
+
+        <div class="ref-block">
+            <h3>Виды финансовой помощи</h3>
+            <form method="post" action="/request-aid-types">
+                <button type="submit">Запросить/Обновить справочник</button>
+            </form>
+            <table>
+                <thead><tr><th>Код</th><th>Название</th><th>Обновлено</th></tr></thead>
+                <tbody>
+                {% for item in aid_types %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.last_update_date }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ref-block">
+            <h3>Виды льгот</h3>
+            <form method="post" action="/request-privilege-types">
+                <button type="submit">Запросить/Обновить справочник</button>
+            </form>
+            <table>
+                <thead><tr><th>Код</th><th>Название</th><th>Обновлено</th></tr></thead>
+                <tbody>
+                {% for item in privilege_types %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.last_update_date }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ref-block">
+            <h3>Виды инициатив</h3>
+            <form method="post" action="/request-initiative-types">
+                <button type="submit">Запросить/Обновить справочник</button>
+            </form>
+            <table>
+                <thead><tr><th>Код</th><th>ID</th><th>Название</th><th>Обновлено</th></tr></thead>
+                <tbody>
+                {% for item in initiative_types %}
+                    <tr>
+                        <td>{{ item.code }}</td>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.last_update_date }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</section>
+
+<!-- 3/10. Запуск скоринга -->
+<section>
+    <h2>Запуск скоринга</h2>
+
+    <fieldset>
+        <legend>Тип скоринга</legend>
+        <div class="field-row">
+            <label for="scoring_type_select">Тип скоринга</label>
+            <select id="scoring_type_select" onchange="toggleScoringForm()">
+                <option value="PF-312">PF-312</option>
+                <option value="GUARANTEE">Гарантия</option>
+            </select>
+        </div>
+    </fieldset>
+
+    <!-- Форма PF-312 -->
+    <form id="form_pf312" method="post" action="/start-scoring-PF-312">
+        <fieldset>
+            <legend>Скоринг PF-312</legend>
+            <div class="field-row">
+                <label for="pf312_tin">ИНН</label>
+                <input type="text" id="pf312_tin" name="tin" placeholder="31201995550018">
+            </div>
+            <div class="field-row">
+                <label for="pf312_is_work">Работает (is_work)</label>
+                <select id="pf312_is_work" name="is_work">
+                    <option value="yes">yes</option>
+                    <option value="no">no</option>
+                </select>
+            </div>
+            <div class="field-row">
+                <label for="pf312_app_num">Номер заявления</label>
+                <input type="text" id="pf312_app_num" name="application_number" placeholder="111111111111111">
+            </div>
+            <button type="submit">Запустить скоринг PF-312</button>
+        </fieldset>
+    </form>
+
+    <!-- Форма GUARANTEE -->
+    <form id="form_guarantee" class="hidden" method="post" action="/start-scoring-GUARANTEE">
+        <fieldset>
+            <legend>Скоринг по гарантии</legend>
+            <div class="field-row">
+                <label for="g_tin">ИНН</label>
+                <input type="text" id="g_tin" name="tin" placeholder="31201995550018">
+            </div>
+            <div class="field-row">
+                <label for="g_app_num">Номер заявления</label>
+                <input type="text" id="g_app_num" name="application_number" placeholder="111111111111111">
+            </div>
+            <div class="field-row">
+                <label for="g_aid_type">Вид финансовой помощи</label>
+                <select id="g_aid_type" name="financial_aid_type">
+                    {% for item in aid_types %}
+                        <option value="{{ item.id }}">{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-row">
+                <label for="g_initiative">Инициатива</label>
+                <select id="g_initiative" name="initiative_type">
+                    <option value="">— не выбрано —</option>
+                    {% for item in initiative_types %}
+                        <option value="{{ item.id }}">{{ item.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="field-row">
+                <label for="g_loan_amount">Сумма кредита</label>
+                <input type="number" id="g_loan_amount" name="loan_amount" placeholder="0">
+            </div>
+            <div class="field-row">
+                <label for="g_guarantee_amount">Сумма гарантии</label>
+                <input type="number" id="g_guarantee_amount" name="guarantee_amount" placeholder="0">
+            </div>
+            <div class="field-row">
+                <label for="g_guarantee_period">Срок гарантии</label>
+                <input type="number" id="g_guarantee_period" name="guarantee_period" placeholder="0">
+            </div>
+            <button type="submit">Запустить скоринг по гарантии</button>
+        </fieldset>
+    </form>
+
+    <script>
+        function toggleScoringForm() {
+            var type = document.getElementById('scoring_type_select').value;
+            document.getElementById('form_pf312').classList.toggle('hidden', type !== 'PF-312');
+            document.getElementById('form_guarantee').classList.toggle('hidden', type !== 'GUARANTEE');
+        }
+    </script>
+</section>
+
+<!-- 4/11/5. Таблица скорингов -->
+<section>
+    <h2>Скоринги</h2>
+
+    <form method="post" action="/manual_send_loan_data">
+        <table>
+            <thead>
+                <tr>
+                    <th>Выбрать</th>
+                    <th>ID скоринга</th>
+                    <th>Тип</th>
+                    <th>ИНН</th>
+                    <th>Номер заявления</th>
+                    <th>Статус</th>
+                    <th>Категория</th>
+                    <th>Результат</th>
+                    <th>Ссылка на ответ</th>
+                    <th>Проверить результат</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for s in scorings %}
+                <tr>
+                    <td>
+                        {% if s.result == 'AGREE' %}
+                            <input type="checkbox" name="company_scoring_id" value="{{ s.company_scoring_id }}">
+                        {% endif %}
+                    </td>
+                    <td>{{ s.company_scoring_id }}</td>
+                    <td>{{ s.scoring_type }}</td>
+                    <td>{{ s.tin }}</td>
+                    <td>{{ s.application_number }}</td>
+                    <td>{{ s.status }}</td>
+                    <td>{{ s.category }}</td>
+                    <td>{{ s.result }}</td>
+                    <td>{{ s.response_link }}</td>
+                    <td>
+                        <form class="inline" method="post" action="/manual_check_scoring">
+                            <input type="hidden" name="company_scoring_id" value="{{ s.company_scoring_id }}">
+                            <input type="hidden" name="application_number" value="{{ s.application_number }}">
+                            <input type="hidden" name="tin" value="{{ s.tin }}">
+                            <button type="submit">Проверить</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">Подтвердить одобрение кредита и уведомить</button>
+    </form>
+</section>
+<!-- Привилегии по скорингам -->
+<section>
+    <h2>Привилегии</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID скоринга</th>
+                <th>ФИО</th>
+                <th>ПИНФЛ</th>
+                <th>Должность</th>
+                <th>Код вида льготы</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in privileges %}
+            <tr>
+                <td>{{ p.company_scoring_id }}</td>
+                <td>{{ p.full_name }}</td>
+                <td>{{ p.pinfl }}</td>
+                <td>{{ p.position }}</td>
+                <td>{{ p.privilege_type_id }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+<!-- 6/7/8. Таблица кредитов -->
+<section>
+    <h2>Кредиты</h2>
+
+    <form method="post" action="/manual_get_loan_dossiers">
+        <table>
+            <thead>
+                <tr>
+                    <th>Выбрать</th>
+                    <th>ID кредита</th>
+                    <th>ИНН</th>
+                    <th>Номер заявления</th>
+                    <th>GRK ID</th>
+                    <th>Создан</th>
+                    <th>Запросить расписание</th>
+                    <th>Запросить счета</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for loan in loans %}
+                <tr>
+                    <td><input type="checkbox" name="company_loan_id" value="{{ loan.company_loan_id }}"></td>
+                    <td>{{ loan.company_loan_id }}</td>
+                    <td>{{ loan.tin }}</td>
+                    <td>{{ loan.application_number }}</td>
+                    <td>{{ loan.grk_id }}</td>
+                    <td>{{ loan.created_at }}</td>
+                    <td>
+                        <button type="submit" form="schedule_form_{{ loan.company_loan_id }}">Запросить расписание</button>
+                    </td>
+                    <td>
+                        <button type="submit" form="accounts_form_{{ loan.company_loan_id }}">Запросить счета</button>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">Запросить досье</button>
+    </form>
+
+    <!-- Скрытые формы для запроса расписания по каждому кредиту -->
+    {% for loan in loans %}
+        <form id="schedule_form_{{ loan.company_loan_id }}" method="post" action="/manual_get_loan_schedule" style="display:none">
+            <input type="hidden" name="company_loan_id" value="{{ loan.company_loan_id }}">
+        </form>
+    {% endfor %}
+
+    <!-- Даты для запроса счетов — общие на все записи -->
+    <fieldset>
+        <legend>Период для запроса счетов</legend>
+        <div class="field-row">
+            <label for="period_start">Дата начала (ДД.ММ.ГГГГ)</label>
+            <input type="text" id="period_start" placeholder="01.01.2024">
+        </div>
+        <div class="field-row">
+            <label for="period_end">Дата конца (ДД.ММ.ГГГГ)</label>
+            <input type="text" id="period_end" placeholder="31.12.2024">
+        </div>
+    </fieldset>
+
+    <!-- Скрытые формы для запроса счетов по каждому кредиту, период подставляется перед отправкой -->
+    {% for loan in loans %}
+        <form id="accounts_form_{{ loan.company_loan_id }}" method="post" action="/manual_get_loan_accounts" style="display:none"
+              onsubmit="this.period_start.value = document.getElementById('period_start').value; this.period_end.value = document.getElementById('period_end').value;">
+            <input type="hidden" name="company_loan_id" value="{{ loan.company_loan_id }}">
+            <input type="hidden" name="period_start" value="">
+            <input type="hidden" name="period_end" value="">
+        </form>
+    {% endfor %}
+</section>
+
+<!-- Демонстрация расписания -->
+<section>
+    <h2>Расписание погашения (все загруженные)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID кредита</th>
+                <th>№ платежа</th>
+                <th>Дата возврата</th>
+                <th>Основной долг</th>
+                <th>Проценты</th>
+                <th>Итого к оплате</th>
+                <th>Остаток основного долга</th>
+                <th>Дней в месяце</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for sch in schedules %}
+            <tr>
+                <td>{{ sch.loan_id }}</td>
+                <td>{{ sch.order_num }}</td>
+                <td>{{ sch.return_date }}</td>
+                <td>{{ sch.principal_debt }}</td>
+                <td>{{ sch.percentage_amount }}</td>
+                <td>{{ sch.payable_total_amount }}</td>
+                <td>{{ sch.principal_balance }}</td>
+                <td>{{ sch.days_in_month }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<!-- Демонстрация счетов -->
+<section>
+    <h2>Обороты по счетам (все загруженные)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID кредита</th>
+                <th>Период начала</th>
+                <th>Период конца</th>
+                <th>Счёт</th>
+                <th>Тип счёта</th>
+                <th>Остаток на начало</th>
+                <th>Остаток на конец</th>
+                <th>Операции</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for acc in accounts %}
+            <tr>
+                <td>{{ acc.loan_id }}</td>
+                <td>{{ acc.period_start }}</td>
+                <td>{{ acc.period_end }}</td>
+                <td>{{ acc.account }}</td>
+                <td>{{ acc.account_type }}</td>
+                <td>{{ acc.balance_start }}</td>
+                <td>{{ acc.balance_end }}</td>
+                <td>{{ acc.operations }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+</body>
+</html>

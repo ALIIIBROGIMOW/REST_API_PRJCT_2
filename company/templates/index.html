@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Компания — интеграционный прототип</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; color: #222; }
+    h2 { margin-top: 40px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+    th, td { border: 1px solid #ccc; padding: 4px 8px; font-size: 13px; text-align: left; }
+    th { background: #f0f0f0; }
+    section { margin-bottom: 30px; }
+    .refs { display: flex; gap: 20px; flex-wrap: wrap; }
+    .ref-block { border: 1px solid #ccc; padding: 10px; flex: 1; min-width: 220px; }
+</style>
+</head>
+<body>
+
+<h1>Компания — демонстрационный интерфейс</h1>
+
+<!-- 1. Пользователи и токены -->
+<section>
+    <h2>Пользователи и токены</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Логин</th>
+                <th>Токен</th>
+                <th>Действует до</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for u in users %}
+            <tr>
+                <td>{{ u.login }}</td>
+                <td>{{ u.access_token }}</td>
+                <td>{{ u.expire_date }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<!-- 2/9/12. Справочники -->
+<section>
+    <h2>Справочники</h2>
+    <div class="refs">
+
+        <div class="ref-block">
+            <h3>Виды финансовой помощи</h3>
+            <table>
+                <thead><tr><th>Код</th><th>Название</th><th>Обновлено</th></tr></thead>
+                <tbody>
+                {% for item in aid_types %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.last_update_date }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ref-block">
+            <h3>Виды льгот</h3>
+            <table>
+                <thead><tr><th>Код</th><th>Название</th><th>Обновлено</th></tr></thead>
+                <tbody>
+                {% for item in privilege_types %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.last_update_date }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="ref-block">
+            <h3>Виды инициатив</h3>
+            <table>
+                <thead><tr><th>ID</th><th>Код</th><th>Название</th><th>Обновлено</th></tr></thead>
+                <tbody>
+                {% for item in initiative_types %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.code }}</td>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.last_update_date }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</section>
+
+<!-- 4/11/5. Скоринги -->
+<section>
+    <h2>Скоринги</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Тип</th>
+                <th>ИНН</th>
+                <th>Номер заявления</th>
+                <th>Описание</th>
+                <th>Вид помощи</th>
+                <th>Инициатива</th>
+                <th>Сумма кредита</th>
+                <th>Сумма гарантии</th>
+                <th>Срок гарантии</th>
+                <th>Статус</th>
+                <th>Результат</th>
+                <th>Категория</th>
+                <th>Путь отчёта</th>
+                <th>Создан</th>
+                <th>Обновлён</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for s in scorings %}
+            <tr>
+                <td>{{ s.id }}</td>
+                <td>{{ s.scoring_type }}</td>
+                <td>{{ s.tin }}</td>
+                <td>{{ s.application_number }}</td>
+                <td>{{ s.description }}</td>
+                <td>{{ s.financial_aid_type }}</td>
+                <td>{{ s.initiative_id }}</td>
+                <td>{{ s.loan_amount }}</td>
+                <td>{{ s.guarantee_amount }}</td>
+                <td>{{ s.guarantee_period }}</td>
+                <td>{{ s.status }}</td>
+                <td>{{ s.result }}</td>
+                <td>{{ s.category }}</td>
+                <td>{{ s.report_path }}</td>
+                <td>{{ s.created_at }}</td>
+                <td>{{ s.updated_at }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+<!-- Привилегии по скорингам -->
+<section>
+    <h2>Привилегии</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID скоринга</th>
+                <th>ФИО</th>
+                <th>ПИНФЛ</th>
+                <th>Должность</th>
+                <th>Код вида льготы</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for p in scoring_privileges %}
+            <tr>
+                <td>{{ p.scoring_id }}</td>
+                <td>{{ p.full_name }}</td>
+                <td>{{ p.pinfl }}</td>
+                <td>{{ p.position }}</td>
+                <td>{{ p.privilege_type_id }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+<!-- 5/6/7/8. Кредиты -->
+<section>
+    <h2>Кредиты</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>ИНН</th>
+                <th>ID заявки (claim_id)</th>
+                <th>Номер заявления</th>
+                <th>GRK ID</th>
+                <th>Создан</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for loan in loans %}
+            <tr>
+                <td>{{ loan.id }}</td>
+                <td>{{ loan.tin }}</td>
+                <td>{{ loan.claim_id }}</td>
+                <td>{{ loan.application_number }}</td>
+                <td>{{ loan.grk_id }}</td>
+                <td>{{ loan.created_at }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<!-- 5/6/7/8. Расписания погашения -->
+<section>
+    <h2>Расписания погашения</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID кредита</th>
+                <th>№ платежа</th>
+                <th>Дата возврата</th>
+                <th>Основной долг</th>
+                <th>Проценты</th>
+                <th>Итого к оплате</th>
+                <th>Остаток основного долга</th>
+                <th>Дней в месяце</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for sch in schedules %}
+            <tr>
+                <td>{{ sch.loan_id }}</td>
+                <td>{{ sch.order_num }}</td>
+                <td>{{ sch.return_date }}</td>
+                <td>{{ sch.principal_debt }}</td>
+                <td>{{ sch.percentage_amount }}</td>
+                <td>{{ sch.payable_total_amount }}</td>
+                <td>{{ sch.principal_balance }}</td>
+                <td>{{ sch.days_in_month }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<!-- 5/6/7/8. Операции по счетам -->
+<section>
+    <h2>Операции по счетам</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID кредита</th>
+                <th>Счёт</th>
+                <th>Тип счёта</th>
+                <th>Дебет</th>
+                <th>Кредит</th>
+                <th>Дата операции</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for op in operations %}
+            <tr>
+                <td>{{ op.loan_id }}</td>
+                <td>{{ op.account }}</td>
+                <td>{{ op.account_type }}</td>
+                <td>{{ op.debit }}</td>
+                <td>{{ op.credit }}</td>
+                <td>{{ op.operation_date }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+</body>
+</html>
